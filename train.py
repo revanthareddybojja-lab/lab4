@@ -1,43 +1,23 @@
-import pandas as pd
 import json
-import os
 import joblib
+import numpy as np
+import os
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, r2_score
+X = np.array([[1], [2], [3], [4]])
+y = np.array([0, 0, 1, 1])
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATASET_PATH = os.path.join(BASE_DIR, "dataset", "winequality-red.csv")
+model = LogisticRegression()
+model.fit(X, y)
 
-OUTPUT_DIR = "outputs"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+preds = model.predict(X)
+acc = accuracy_score(y, preds)
 
-data = pd.read_csv(DATASET_PATH, sep=";")
+os.makedirs("models", exist_ok=True)
+joblib.dump(model, "models/model.pkl")
 
-features = ["alcohol", "sulphates", "volatile acidity"]
-X = data[features]
-y = data["quality"]
+with open("metrics.json", "w") as f:
+    json.dump({"accuracy": acc}, f)
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.25, random_state=42
-)
-
-model = RandomForestRegressor(n_estimators=200, max_depth=20, random_state=42)
-model.fit(X_train, y_train)
-
-y_pred = model.predict(X_test)
-
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-
-print("MSE:", mse)
-print("R2:", r2)
-
-joblib.dump(model, f"{OUTPUT_DIR}/model.pkl")
-
-json.dump(
-    {"experiment": "EXP-08", "mse": mse, "r2": r2},
-    open(f"{OUTPUT_DIR}/results.json", "w"),
-    indent=4
-)
+print("Training done | Accuracy:", acc)
